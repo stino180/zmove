@@ -1,0 +1,21 @@
+{
+  "name": "zmove",
+  "short_name": "zmove",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f6effa",
+  "theme_color": "#a259e6",
+  "description": "Watch and share sports highlights from high school to pro!",
+  "icons": [
+    {
+      "src": "z-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "z-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+} 
