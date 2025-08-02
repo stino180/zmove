@@ -102,6 +102,12 @@ const Auth = ({ onAuthSuccess }) => {
           </button>
         </p>
       </div>
+      
+      <div className="about-section">
+        <p className="about-text">
+          This project was created by <strong>Jrari Yvonne</strong>, <strong>Baier</strong>, and <strong>Justin Strong</strong>
+        </p>
+      </div>
     </div>
   );
 };

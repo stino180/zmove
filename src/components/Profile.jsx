@@ -211,7 +211,7 @@ const Profile = ({ currentUser, onProfileUpdate, onVideoDeleted }) => {
                   onClick={() => handleVideoClick(video)}
                 >
                   <video 
-                    src={`http://localhost:5000${video.videoUrl}`} 
+                    src={video.videoUrl} 
                     muted 
                     onLoadedData={(e) => {
                       e.target.currentTime = 1; // Set to 1 second for thumbnail

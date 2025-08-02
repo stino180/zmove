@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const Video = require('../models/Video');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -129,53 +130,25 @@ router.get('/my-videos', auth, async (req, res) => {
   }
 });
 
-// Get single video
-router.get('/:id', async (req, res) => {
+// Get videos from followed users
+router.get('/following', auth, async (req, res) => {
   try {
-    const video = await Video.findById(req.params.id)
+    const currentUser = await User.findById(req.user._id).populate('following');
+    
+    if (!currentUser.following || currentUser.following.length === 0) {
+      return res.json([]);
+    }
+
+    const followingIds = currentUser.following.map(user => user._id);
+    
+    const videos = await Video.find({ 
+      uploadedBy: { $in: followingIds } 
+    })
       .populate('uploadedBy', 'username avatar')
       .populate('likes', 'username')
-      .populate('comments.user', 'username avatar');
+      .sort({ createdAt: -1 });
     
-    if (!video) {
-      return res.status(404).json({ message: 'Video not found' });
-    }
-    
-    res.json(video);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Delete video (by owner or admin)
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    const video = await Video.findById(req.params.id);
-    
-    if (!video) {
-      return res.status(404).json({ message: 'Video not found' });
-    }
-    
-    // Allow if owner or admin
-    if (
-      video.uploadedBy.toString() !== req.user._id.toString() &&
-      !req.user.isAdmin
-    ) {
-      return res.status(401).json({ message: 'Not authorized' });
-    }
-    
-    // Delete file from uploads folder
-    if (video.videoUrl) {
-      const filePath = path.join(__dirname, '..', video.videoUrl);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    }
-    
-    await Video.findByIdAndDelete(req.params.id);
-    
-    res.json({ message: 'Video deleted successfully' });
+    res.json(videos);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -224,6 +197,59 @@ router.get('/trending-tags', async (req, res) => {
     ]);
     
     res.json(tags);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get single video
+router.get('/:id', async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id)
+      .populate('uploadedBy', 'username avatar')
+      .populate('likes', 'username')
+      .populate('comments.user', 'username avatar');
+    
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    res.json(video);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete video (by owner or admin)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+    
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
+    
+    // Allow if owner or admin
+    if (
+      video.uploadedBy.toString() !== req.user._id.toString() &&
+      !req.user.isAdmin
+    ) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+    
+    // Delete file from uploads folder
+    if (video.videoUrl) {
+      const filePath = path.join(__dirname, '..', video.videoUrl);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    
+    await Video.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'Video deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

@@ -3,6 +3,8 @@ import VideoFeed from './VideoFeed'
 import Auth from './components/Auth'
 import VideoUpload from './components/VideoUpload'
 import Profile from './components/Profile'
+import UserProfile from './components/UserProfile'
+import FollowingFeed from './components/FollowingFeed'
 import VideoFilterBar from './components/VideoFilterBar'
 import { useEffect, useState } from 'react'
 import { authAPI, videoAPI } from './api'
@@ -12,7 +14,8 @@ function App() {
   const [showInstall, setShowInstall] = useState(false)
   const [user, setUser] = useState(null)
   const [videos, setVideos] = useState([])
-  const [currentView, setCurrentView] = useState('home') // 'home', 'upload', 'profile'
+  const [currentView, setCurrentView] = useState('home') // 'home', 'upload', 'profile', 'userProfile', 'following'
+  const [viewingUser, setViewingUser] = useState(null) // username of user being viewed
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ category: 'All', search: '', tag: '' })
 
@@ -42,22 +45,24 @@ function App() {
     checkAuth()
   }, [])
 
-  // Load videos (with filters)
+  // Load videos (with filters) - only for home view
   useEffect(() => {
-    const loadVideos = async () => {
-      try {
-        const params = {}
-        if (filters.category && filters.category !== 'All') params.category = filters.category
-        if (filters.search) params.search = filters.search
-        if (filters.tag) params.search = filters.tag
-        const videosData = await videoAPI.getAllVideos(params)
-        setVideos(videosData)
-      } catch (error) {
-        console.error('Failed to load videos:', error)
+    if (currentView === 'home') {
+      const loadVideos = async () => {
+        try {
+          const params = {}
+          if (filters.category && filters.category !== 'All') params.category = filters.category
+          if (filters.search) params.search = filters.search
+          if (filters.tag) params.search = filters.tag
+          const videosData = await videoAPI.getAllVideos(params)
+          setVideos(videosData)
+        } catch (error) {
+          console.error('Failed to load videos:', error)
+        }
       }
+      loadVideos()
     }
-    loadVideos()
-  }, [filters])
+  }, [filters, currentView])
 
   const handleAuthSuccess = (userData) => {
     setUser(userData)
@@ -67,6 +72,7 @@ function App() {
     authAPI.logout()
     setUser(null)
     setCurrentView('home')
+    setViewingUser(null)
   }
 
   const handleUploadSuccess = (newVideo) => {
@@ -90,6 +96,16 @@ function App() {
     setVideos(prevVideos => prevVideos.filter(video => video._id !== videoId))
   }
 
+  const handleUserClick = (username) => {
+    setViewingUser(username)
+    setCurrentView('userProfile')
+  }
+
+  const handleBackToHome = () => {
+    setCurrentView('home')
+    setViewingUser(null)
+  }
+
   const handleInstallClick = () => {
     if (deferredPrompt) {
       deferredPrompt.prompt()
@@ -102,6 +118,59 @@ function App() {
 
   const handleFilterChange = (newFilters) => {
     setFilters({ ...filters, ...newFilters })
+  }
+
+  const renderMainContent = () => {
+    if (loading) {
+      return <div className="loading">Loading...</div>
+    }
+
+    if (!user) {
+      return <Auth onAuthSuccess={handleAuthSuccess} />
+    }
+
+    switch (currentView) {
+      case 'home':
+        return (
+          <>
+            <VideoFilterBar onFilterChange={handleFilterChange} />
+            <VideoFeed 
+              videos={videos} 
+              currentUser={user} 
+              onVideoUpdate={handleVideoUpdate}
+              onUserClick={handleUserClick}
+            />
+          </>
+        )
+      case 'following':
+        return (
+          <FollowingFeed 
+            currentUser={user} 
+            onVideoUpdate={handleVideoUpdate}
+            onUserClick={handleUserClick}
+          />
+        )
+      case 'upload':
+        return <VideoUpload onUploadSuccess={handleUploadSuccess} />
+      case 'profile':
+        return (
+          <Profile 
+            currentUser={user} 
+            onProfileUpdate={handleProfileUpdate} 
+            onVideoDeleted={handleVideoDeleted} 
+          />
+        )
+      case 'userProfile':
+        return (
+          <UserProfile 
+            username={viewingUser}
+            currentUser={user}
+            onBack={handleBackToHome}
+          />
+        )
+      default:
+        return <div>View not found</div>
+    }
   }
 
   return (
@@ -130,26 +199,18 @@ function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        {loading ? (
-          <div className="loading">Loading...</div>
-        ) : !user ? (
-          <Auth onAuthSuccess={handleAuthSuccess} />
-        ) : (
-          <>
-            {currentView === 'home' && <>
-              <VideoFilterBar onFilterChange={handleFilterChange} />
-              <VideoFeed videos={videos} currentUser={user} onVideoUpdate={handleVideoUpdate} />
-            </>}
-            {currentView === 'upload' && <VideoUpload onUploadSuccess={handleUploadSuccess} />}
-            {currentView === 'profile' && <Profile currentUser={user} onProfileUpdate={handleProfileUpdate} onVideoDeleted={handleVideoDeleted} />}
-          </>
-        )}
+        {renderMainContent()}
       </main>
 
       {/* Bottom Navigation Bar */}
       {user && (
         <nav className="bottom-nav">
-          <button className="nav-btn">Following</button>
+          <button 
+            className={`nav-btn ${currentView === 'following' ? 'active' : ''}`}
+            onClick={() => setCurrentView('following')}
+          >
+            Following
+          </button>
           <button 
             className={`nav-btn ${currentView === 'home' ? 'active' : ''}`}
             onClick={() => setCurrentView('home')}

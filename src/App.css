@@ -852,3 +852,159 @@ body, html, #root, .app-container {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Follow Button Styles */
+.follow-btn {
+  background: #a259e6;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.follow-btn.following {
+  background: #666;
+}
+
+.follow-btn:hover {
+  background: #8a4fd8;
+}
+
+.follow-btn.following:hover {
+  background: #555;
+}
+
+.follow-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.follow-btn-small {
+  background: rgba(162, 89, 230, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  margin-left: 0.5rem;
+}
+
+.follow-btn-small.following {
+  background: rgba(102, 102, 102, 0.8);
+}
+
+.follow-btn-small:hover {
+  background: rgba(162, 89, 230, 1);
+}
+
+.follow-btn-small.following:hover {
+  background: rgba(102, 102, 102, 1);
+}
+
+.follow-btn-small:disabled {
+  background: rgba(204, 204, 204, 0.8);
+  cursor: not-allowed;
+}
+
+/* Clickable Username */
+.video-user.clickable {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.video-user.clickable:hover {
+  color: #8a4fd8;
+  text-decoration: underline;
+}
+
+.video-user-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Profile Actions */
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.back-btn {
+  background: #666;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: #555;
+}
+
+/* Avatar Placeholder */
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #a259e6;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Error Message with Back Button */
+.error-message {
+  background: #ff4757;
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem;
+  text-align: center;
+}
+
+.error-message .back-btn {
+  margin-top: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.error-message .back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* About Section on Auth Page */
+.about-section {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(162, 89, 230, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(162, 89, 230, 0.2);
+}
+
+.about-text {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.about-text strong {
+  color: #a259e6;
+  font-weight: 600;
+}

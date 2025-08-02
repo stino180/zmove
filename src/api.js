@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = '/api';
 
 // Helper function to get auth token
 const getToken = () => localStorage.getItem('token');
@@ -117,6 +117,11 @@ export const videoAPI = {
   // Get user's videos
   getUserVideos: async () => {
     return await apiRequest('/videos/my-videos');
+  },
+
+  // Get videos from followed users
+  getFollowingVideos: async () => {
+    return await apiRequest('/videos/following');
   },
 
   // Get single video

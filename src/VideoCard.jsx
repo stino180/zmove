@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { interactionAPI } from './api';
+import { interactionAPI, profileAPI } from './api';
 import Comments from './components/Comments';
 
-export default function VideoCard({ video, currentUser, onVideoUpdate }) {
+export default function VideoCard({ video, currentUser, onVideoUpdate, onUserClick }) {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(video.likes?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(video.comments?.length || 0);
   const [loading, setLoading] = useState(false);
   const [viewCount, setViewCount] = useState(video.viewCount || 0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
-  const videoUrl = video.videoUrl ? `http://localhost:5000${video.videoUrl}` : (video.url || '');
+  const videoUrl = video.videoUrl ? video.videoUrl : (video.url || '');
   const username = video.uploadedBy?.username || video.user || 'Unknown User';
+  const uploadedBy = video.uploadedBy;
 
   // Debug: log video info
   console.log('Video data:', video);
@@ -23,7 +26,14 @@ export default function VideoCard({ video, currentUser, onVideoUpdate }) {
       setIsLiked(video.likes.some(like => like._id === currentUser._id || like === currentUser._id));
     }
     setViewCount(video.viewCount || 0);
-  }, [currentUser, video.likes, video.viewCount]);
+    
+    // Check if current user is following the video uploader
+    if (currentUser && uploadedBy && uploadedBy.followers) {
+      setIsFollowing(uploadedBy.followers.some(follower => 
+        follower._id === currentUser._id || follower === currentUser._id
+      ));
+    }
+  }, [currentUser, video.likes, video.viewCount, uploadedBy]);
 
   const handleLike = async () => {
     if (!currentUser) return;
@@ -38,6 +48,31 @@ export default function VideoCard({ video, currentUser, onVideoUpdate }) {
       console.error('Failed to like video:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollowToggle = async () => {
+    if (!currentUser || !uploadedBy) return;
+    
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await profileAPI.unfollowUser(uploadedBy._id);
+        setIsFollowing(false);
+      } else {
+        await profileAPI.followUser(uploadedBy._id);
+        setIsFollowing(true);
+      }
+    } catch (error) {
+      console.error('Failed to follow/unfollow user:', error);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleUserClick = () => {
+    if (onUserClick && uploadedBy) {
+      onUserClick(uploadedBy.username);
     }
   };
 
@@ -58,6 +93,8 @@ export default function VideoCard({ video, currentUser, onVideoUpdate }) {
       .catch(console.error);
   };
 
+  const isOwnVideo = currentUser && uploadedBy && currentUser._id === uploadedBy._id;
+
   return (
     <div className="video-card">
       <video 
@@ -70,7 +107,23 @@ export default function VideoCard({ video, currentUser, onVideoUpdate }) {
       />
       <div className="video-overlay">
         <div className="video-info">
-          <span className="video-user">@{username}</span>
+          <div className="video-user-section">
+            <span 
+              className="video-user clickable"
+              onClick={handleUserClick}
+            >
+              @{username}
+            </span>
+            {!isOwnVideo && currentUser && uploadedBy && (
+              <button 
+                className={`follow-btn-small ${isFollowing ? 'following' : ''}`}
+                onClick={handleFollowToggle}
+                disabled={followLoading}
+              >
+                {followLoading ? '...' : (isFollowing ? '✓' : '+')}
+              </button>
+            )}
+          </div>
           <span className="video-title">{video.title}</span>
           {video.description && (
             <span className="video-description">{video.description}</span>

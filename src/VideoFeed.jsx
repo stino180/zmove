@@ -1,6 +1,6 @@
 import VideoCard from './VideoCard'
 
-export default function VideoFeed({ videos = [], currentUser, onVideoUpdate }) {
+export default function VideoFeed({ videos = [], currentUser, onVideoUpdate, onUserClick }) {
   if (videos.length === 0) {
     return (
       <div className="video-feed">
@@ -19,6 +19,7 @@ export default function VideoFeed({ videos = [], currentUser, onVideoUpdate }) {
           video={video} 
           currentUser={currentUser}
           onVideoUpdate={onVideoUpdate}
+          onUserClick={onUserClick}
         />
       ))}
     </div>
