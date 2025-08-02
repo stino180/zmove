@@ -199,10 +199,11 @@ body, html, #root, .app-container {
 .auth-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   min-height: 100%;
   padding: 2rem;
+  padding-top: 4rem;
 }
 
 .auth-form {
@@ -998,6 +999,7 @@ body, html, #root, .app-container {
   border: 1px solid rgba(162, 89, 230, 0.2);
   width: 100%;
   max-width: 400px;
+  margin-bottom: 2rem;
 }
 
 .about-text {
