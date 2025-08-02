@@ -198,6 +198,7 @@ body, html, #root, .app-container {
 /* Auth Component Styles */
 .auth-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100%;
@@ -995,6 +996,8 @@ body, html, #root, .app-container {
   background: rgba(162, 89, 230, 0.1);
   border-radius: 10px;
   border: 1px solid rgba(162, 89, 230, 0.2);
+  width: 100%;
+  max-width: 400px;
 }
 
 .about-text {
