@@ -26,4 +26,14 @@ export default defineConfig({
       },
     })
   ],
+  define: {
+    'import.meta.env.MODE': '"production"'
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    }
+  }
 })

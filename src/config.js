@@ -12,8 +12,8 @@ const config = {
   }
 };
 
-// Get current environment
-const env = import.meta.env.MODE || 'development';
+// Get current environment - force production for live site
+const env = window.location.hostname === 'zmove.xyz' ? 'production' : (import.meta.env.MODE || 'development');
 const currentConfig = config[env];
 
 // Export the appropriate API base URL
