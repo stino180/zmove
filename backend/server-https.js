@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -40,7 +43,7 @@ const authLimiter = rateLimit({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://zmove.xyz', 'https://www.zmove.xyz'] 
-    : ['http://localhost:3000', 'http://localhost:5173'],
+    : ['https://localhost:3000', 'https://localhost:5173', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -77,8 +80,19 @@ mongoose.connect(process.env.MONGODB_URI, {
   });
 
 app.get('/', (req, res) => {
-  res.send('API is running');
+  res.send('HTTPS API is running');
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
+// SSL options
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'certs', 'key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'certs', 'cert.pem'))
+};
+
+const PORT = process.env.HTTPS_PORT || 5001;
+const httpsServer = https.createServer(sslOptions, app);
+
+httpsServer.listen(PORT, () => {
+  console.log(`HTTPS Server running on port ${PORT}`);
+  console.log(`Visit: https://localhost:${PORT}`);
+});

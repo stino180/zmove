@@ -1,15 +1,23 @@
 {
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:https": "node server-https.js",
+    "start:combined": "node server-combined.js",
+    "start:https-simple": "node server-https-simple.js",
+    "generate-cert": "node generate-cert.js",
+    "setup-https": "node setup-https.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.17.0",
     "mongoose": "^8.16.3",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+    "path": "^0.12.7"
   }
 }

@@ -1,13 +1,51 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// Input validation middleware
+const validateRegistration = [
+  body('username')
+    .trim()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('password')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+];
+
+const validateLogin = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required'),
+];
+
 // Register User
-router.post('/register', async (req, res) => {
+router.post('/register', validateRegistration, async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      message: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
   try {
     const { username, email, password } = req.body;
 
@@ -52,7 +90,15 @@ router.post('/register', async (req, res) => {
 });
 
 // Login User
-router.post('/login', async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ 
+      message: 'Validation failed', 
+      errors: errors.array() 
+    });
+  }
   try {
     const { email, password } = req.body;
 

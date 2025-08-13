@@ -5,6 +5,7 @@ const fs = require('fs');
 const Video = require('../models/Video');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { videoUploadLimiter, sanitizeInput, checkFileType } = require('../middleware/security');
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ const upload = multer({
 });
 
 // Upload video
-router.post('/upload', auth, upload.single('video'), async (req, res) => {
+router.post('/upload', auth, videoUploadLimiter, sanitizeInput, upload.single('video'), checkFileType, async (req, res) => {
   try {
     const { title, description, tags } = req.body;
     

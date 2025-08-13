@@ -2,6 +2,7 @@ const express = require('express');
 const Video = require('../models/Video');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { commentLimiter, sanitizeInput } = require('../middleware/security');
 
 const router = express.Router();
 
@@ -46,7 +47,7 @@ router.post('/like/:videoId', auth, async (req, res) => {
 });
 
 // Add comment to video
-router.post('/comment/:videoId', auth, async (req, res) => {
+router.post('/comment/:videoId', auth, commentLimiter, sanitizeInput, async (req, res) => {
   try {
     const { text } = req.body;
     

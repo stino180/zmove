@@ -2,6 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -40,7 +44,7 @@ const authLimiter = rateLimit({
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
     ? ['https://zmove.xyz', 'https://www.zmove.xyz'] 
-    : ['http://localhost:3000', 'http://localhost:5173'],
+    : ['https://localhost:3000', 'https://localhost:5173', 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -77,8 +81,43 @@ mongoose.connect(process.env.MONGODB_URI, {
   });
 
 app.get('/', (req, res) => {
-  res.send('API is running');
+  res.send('API is running on both HTTP and HTTPS');
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
+// HTTP Server
+const HTTP_PORT = process.env.PORT || 5000;
+const httpServer = http.createServer(app);
+
+httpServer.listen(HTTP_PORT, () => {
+  console.log(`HTTP Server running on port ${HTTP_PORT}`);
+  console.log(`Visit: http://localhost:${HTTP_PORT}`);
+});
+
+// HTTPS Server (if certificates exist)
+const HTTPS_PORT = process.env.HTTPS_PORT || 5001;
+const certPath = path.join(__dirname, 'certs');
+const keyPath = path.join(certPath, 'key.pem');
+const certPathFile = path.join(certPath, 'cert.pem');
+
+if (fs.existsSync(keyPath) && fs.existsSync(certPathFile)) {
+  try {
+    const sslOptions = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPathFile)
+    };
+
+    const httpsServer = https.createServer(sslOptions, app);
+    httpsServer.listen(HTTPS_PORT, () => {
+      console.log(`HTTPS Server running on port ${HTTPS_PORT}`);
+      console.log(`Visit: https://localhost:${HTTPS_PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start HTTPS server:', error.message);
+    console.log('HTTP server is still running on port', HTTP_PORT);
+  }
+} else {
+  console.log('SSL certificates not found. HTTPS server not started.');
+  console.log('Run "node generate-cert.js" to generate certificates, or');
+  console.log('place your own key.pem and cert.pem files in the certs/ directory.');
+  console.log('HTTP server is running on port', HTTP_PORT);
+}
