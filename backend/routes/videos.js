@@ -6,23 +6,12 @@ const Video = require('../models/Video');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { videoUploadLimiter, sanitizeInput, checkFileType } = require('../middleware/security');
+const supabase = require('../config/supabase');
 
 const router = express.Router();
 
-// Configure multer for video uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Configure multer for memory storage (for Supabase uploads)
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -54,11 +43,34 @@ router.post('/upload', auth, videoUploadLimiter, sanitizeInput, upload.single('v
     // Parse tags from string to array
     const tagsArray = tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
 
+    // Generate unique filename
+    const fileExt = path.extname(req.file.originalname);
+    const fileName = `videos/${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExt}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('videos')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ message: 'Failed to upload video to storage' });
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('videos')
+      .getPublicUrl(fileName);
+
     const video = new Video({
       title,
       description,
       tags: tagsArray,
-      videoUrl: `/uploads/${req.file.filename}`,
+      videoUrl: urlData.publicUrl,
       uploadedBy: req.user._id
     });
 
@@ -240,11 +252,23 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(401).json({ message: 'Not authorized' });
     }
     
-    // Delete file from uploads folder
-    if (video.videoUrl) {
-      const filePath = path.join(__dirname, '..', video.videoUrl);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    // Delete file from Supabase Storage
+    if (video.videoUrl && video.videoUrl.includes('supabase')) {
+      try {
+        // Extract filename from URL
+        const urlParts = video.videoUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        const fullPath = `videos/${fileName}`;
+        
+        const { error } = await supabase.storage
+          .from('videos')
+          .remove([fullPath]);
+          
+        if (error) {
+          console.error('Error deleting from Supabase:', error);
+        }
+      } catch (error) {
+        console.error('Error deleting video file:', error);
       }
     }
     

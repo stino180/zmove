@@ -1,4 +1,6 @@
-const API_BASE_URL = '/api';
+import { getApiUrl } from './config.js';
+
+const API_BASE_URL = getApiUrl();
 
 // Helper function to get auth token
 const getToken = () => localStorage.getItem('token');

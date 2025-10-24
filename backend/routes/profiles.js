@@ -5,24 +5,12 @@ const fs = require('fs');
 const User = require('../models/User');
 const Video = require('../models/Video');
 const auth = require('../middleware/auth');
+const supabase = require('../config/supabase');
 
 const router = express.Router();
 
-// Multer config for avatar uploads
-const avatarStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join('uploads', 'avatars');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = req.user._id + '-' + Date.now() + ext;
-    cb(null, uniqueName);
-  }
-});
+// Multer config for avatar uploads (memory storage for Supabase)
+const avatarStorage = multer.memoryStorage();
 const avatarUpload = multer({
   storage: avatarStorage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
@@ -41,13 +29,37 @@ router.post('/upload-avatar', auth, avatarUpload.single('avatar'), async (req, r
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
+    // Generate unique filename
+    const fileExt = path.extname(req.file.originalname);
+    const fileName = `avatars/${req.user._id}-${Date.now()}${fileExt}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: true // Allow overwriting existing avatars
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ message: 'Failed to upload avatar to storage' });
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(fileName);
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { avatar: avatarUrl },
+      { avatar: urlData.publicUrl },
       { new: true }
     ).select('-password');
-    res.json({ avatar: avatarUrl, user });
+    
+    res.json({ avatar: urlData.publicUrl, user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

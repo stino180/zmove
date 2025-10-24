@@ -88,6 +88,17 @@ app.get('/', (req, res) => {
 const HTTP_PORT = process.env.PORT || 5000;
 const httpServer = http.createServer(app);
 
+// Redirect HTTP to HTTPS in production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.header('x-forwarded-proto') !== 'https') {
+      res.redirect(`https://${req.header('host')}${req.url}`);
+    } else {
+      next();
+    }
+  });
+}
+
 httpServer.listen(HTTP_PORT, () => {
   console.log(`✅ HTTP Server running on port ${HTTP_PORT}`);
   console.log(`🌐 Visit: http://localhost:${HTTP_PORT}`);
